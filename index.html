@@ -1,0 +1,1665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Management &amp; Billing System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        :root {
+            /* Design System Variables */
+            --color-primary: #1fb8cd;
+            --color-secondary: #6c757d;
+            --color-success: #198754;
+            --color-danger: #dc3545;
+            --color-warning: #fd7e14;
+            --color-info: #0dcaf0;
+            --color-light: #f8f9fa;
+            --color-dark: #212529;
+        }
+
+        body {
+            background-color: var(--color-light);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            color: var(--color-primary) !important;
+        }
+
+        .product-card {
+            transition: transform 0.2s, box-shadow 0.2s;
+            border: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .product-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+
+        .product-image {
+            height: 200px;
+            object-fit: cover;
+            background: linear-gradient(45deg, #f8f9fa, #e9ecef);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            color: var(--color-secondary);
+        }
+
+        .out-of-stock {
+            opacity: 0.6;
+            position: relative;
+        }
+
+        .out-of-stock::after {
+            content: 'OUT OF STOCK';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--color-danger);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 0.8rem;
+        }
+
+        .cart-counter {
+            background: var(--color-danger);
+            color: white;
+            border-radius: 50%;
+            padding: 2px 6px;
+            font-size: 0.7rem;
+            position: absolute;
+            top: -8px;
+            right: -8px;
+        }
+
+        .price-text {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--color-primary);
+        }
+
+        .discount-badge {
+            background: var(--color-success);
+            color: white;
+            border-radius: 4px;
+            padding: 2px 8px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .invoice-section {
+            background: white;
+            border: 2px solid var(--color-primary);
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .admin-panel {
+            background: linear-gradient(135deg, var(--color-primary), var(--color-info));
+            color: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .stats-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .category-filter {
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .category-filter:hover {
+            background: var(--color-primary) !important;
+            color: white !important;
+        }
+
+        .category-filter.active {
+            background: var(--color-primary) !important;
+            color: white !important;
+        }
+
+        .search-container {
+            position: relative;
+        }
+
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        .modal-header {
+            background: var(--color-primary);
+            color: white;
+        }
+
+        .btn-primary {
+            background: var(--color-primary);
+            border-color: var(--color-primary);
+        }
+
+        .btn-primary:hover {
+            background: #17a2b8;
+            border-color: #17a2b8;
+        }
+
+        .table-responsive {
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .quantity-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .quantity-btn {
+            width: 30px;
+            height: 30px;
+            border: none;
+            border-radius: 50%;
+            background: var(--color-primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        .quantity-btn:hover {
+            background: #17a2b8;
+        }
+
+        .quantity-btn:disabled {
+            background: var(--color-secondary);
+            cursor: not-allowed;
+        }
+
+        .cart-summary {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 20px;
+        }
+
+        .promo-input {
+            border-top-right-radius: 0 !important;
+            border-bottom-right-radius: 0 !important;
+        }
+
+        .promo-btn {
+            border-top-left-radius: 0 !important;
+            border-bottom-left-radius: 0 !important;
+        }
+
+        @media (max-width: 768px) {
+            .product-image {
+                height: 150px;
+                font-size: 2rem;
+            }
+            
+            .cart-summary {
+                position: relative;
+                margin-top: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top">
+        <div class="container">
+            <a class="navbar-brand" href="#"><i class="bi bi-shop"></i> ShopEase</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="showSection('products')">Products</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="showSection('cart')">Cart</a>
+                    </li>
+                    <li class="nav-item" id="orderHistoryNav" style="display: none;">
+                        <a class="nav-link" href="#" onclick="showSection('orders')">Order History</a>
+                    </li>
+                    <li class="nav-item" id="adminNav" style="display: none;">
+                        <a class="nav-link" href="#" onclick="showSection('admin')">Admin Panel</a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav">
+                    <li class="nav-item position-relative">
+                        <a class="nav-link" href="#" onclick="showSection('cart')">
+                            <i class="bi bi-cart3"></i> Cart
+                            <span id="cartCounter" class="cart-counter">0</span>
+                        </a>
+                    </li>
+                    <li class="nav-item" id="loginNav">
+                        <a class="nav-link" href="#" onclick="showSection('login')">Login</a>
+                    </li>
+                    <li class="nav-item" id="userNav" style="display: none;">
+                        <div class="dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                                <i class="bi bi-person-circle"></i> <span id="currentUser"></span>
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="#" onclick="logout()">Logout</a></li>
+                            </ul>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container mt-4">
+        <!-- Welcome Section -->
+        <section id="welcomeSection">
+            <div class="row">
+                <div class="col-12">
+                    <div class="jumbotron bg-primary text-white rounded p-5 mb-4">
+                        <h1 class="display-4">Welcome to ShopEase</h1>
+                        <p class="lead">Your one-stop shop for electronics, clothing, groceries, books &amp; sports equipment</p>
+                        <button class="btn btn-light btn-lg" onclick="showSection('products')">Start Shopping</button>
+                        <button class="btn btn-outline-light btn-lg ms-2" onclick="showSection('login')">Login</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Login Section -->
+        <section id="loginSection" style="display: none;">
+            <div class="row justify-content-center">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header bg-primary text-white">
+                            <h3 class="mb-0">Login</h3>
+                        </div>
+                        <div class="card-body">
+                            <form id="loginForm">
+                                <div class="mb-3">
+                                    <label for="loginUsername" class="form-label">Username</label>
+                                    <input type="text" class="form-control" id="loginUsername" required>
+                                    <small class="text-muted">Demo: admin/admin123 or user/user123</small>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="loginPassword" class="form-label">Password</label>
+                                    <input type="password" class="form-control" id="loginPassword" required>
+                                </div>
+                                <button type="submit" class="btn btn-primary w-100">Login</button>
+                            </form>
+                            <hr>
+                            <p class="text-center mb-0">
+                                Don't have an account? 
+                                <a href="#" onclick="showSection('register')">Register here</a>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Register Section -->
+        <section id="registerSection" style="display: none;">
+            <div class="row justify-content-center">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header bg-success text-white">
+                            <h3 class="mb-0">Register</h3>
+                        </div>
+                        <div class="card-body">
+                            <form id="registerForm">
+                                <div class="mb-3">
+                                    <label for="registerUsername" class="form-label">Username</label>
+                                    <input type="text" class="form-control" id="registerUsername" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="registerEmail" class="form-label">Email</label>
+                                    <input type="email" class="form-control" id="registerEmail" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="registerPassword" class="form-label">Password</label>
+                                    <input type="password" class="form-control" id="registerPassword" required>
+                                </div>
+                                <button type="submit" class="btn btn-success w-100">Register</button>
+                            </form>
+                            <hr>
+                            <p class="text-center mb-0">
+                                Already have an account? 
+                                <a href="#" onclick="showSection('login')">Login here</a>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Products Section -->
+        <section id="productsSection" style="display: none;">
+            <div class="row mb-4">
+                <div class="col-12">
+                    <h2>Our Products</h2>
+                    
+                    <!-- Search and Filter -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="search-container">
+                                <input type="text" class="form-control" id="searchInput" placeholder="Search products...">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <select class="form-control" id="priceFilter">
+                                <option value="">All Prices</option>
+                                <option value="0-500">Under ₹500</option>
+                                <option value="500-1000">₹500 - ₹1000</option>
+                                <option value="1000-2000">₹1000 - ₹2000</option>
+                                <option value="2000-5000">₹2000 - ₹5000</option>
+                                <option value="5000+">Above ₹5000</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <button class="btn btn-primary w-100" onclick="applyFilters()">Apply Filters</button>
+                        </div>
+                    </div>
+
+                    <!-- Category Filters -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="d-flex flex-wrap gap-2" id="categoryFilters">
+                                <button class="btn btn-outline-primary category-filter active" data-category="">All</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Products Grid -->
+            <div class="row" id="productsGrid">
+                <!-- Products will be loaded here -->
+            </div>
+        </section>
+
+        <!-- Cart Section -->
+        <section id="cartSection" style="display: none;">
+            <div class="row">
+                <div class="col-lg-8">
+                    <h2>Shopping Cart</h2>
+                    <div id="cartItems">
+                        <!-- Cart items will be displayed here -->
+                    </div>
+                </div>
+                <div class="col-lg-4">
+                    <div class="cart-summary">
+                        <h4>Order Summary</h4>
+                        <hr>
+                        <div class="d-flex justify-content-between">
+                            <span>Subtotal:</span>
+                            <span id="cartSubtotal">₹0.00</span>
+                        </div>
+                        <div class="d-flex justify-content-between" id="discountRow" style="display: none;">
+                            <span>Discount:</span>
+                            <span id="cartDiscount" class="text-success">-₹0.00</span>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span>Tax (18% GST):</span>
+                            <span id="cartTax">₹0.00</span>
+                        </div>
+                        <hr>
+                        <div class="d-flex justify-content-between fw-bold">
+                            <span>Total:</span>
+                            <span id="cartTotal">₹0.00</span>
+                        </div>
+                        
+                        <!-- Promo Code -->
+                        <div class="mt-3">
+                            <label class="form-label">Promo Code:</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control promo-input" id="promoCode" placeholder="Enter promo code">
+                                <button class="btn btn-outline-primary promo-btn" type="button" onclick="applyPromoCode()">Apply</button>
+                            </div>
+                            <small class="text-muted">Try: SAVE10, OFFER20, WELCOME5</small>
+                        </div>
+                        
+                        <button class="btn btn-primary w-100 mt-3" onclick="proceedToCheckout()" id="checkoutBtn">Proceed to Checkout</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Checkout Section -->
+        <section id="checkoutSection" style="display: none;">
+            <div class="row">
+                <div class="col-lg-8">
+                    <h2>Checkout</h2>
+                    <form id="checkoutForm">
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h5>Billing Information</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Full Name</label>
+                                        <input type="text" class="form-control" id="billingName" required>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Phone</label>
+                                        <input type="tel" class="form-control" id="billingPhone" required>
+                                    </div>
+                                    <div class="col-12 mb-3">
+                                        <label class="form-label">Address</label>
+                                        <textarea class="form-control" id="billingAddress" rows="3" required></textarea>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">City</label>
+                                        <input type="text" class="form-control" id="billingCity" required>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Postal Code</label>
+                                        <input type="text" class="form-control" id="billingPostal" required>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h5>Payment Method</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-3 mb-2">
+                                        <label class="form-check-label">
+                                            <input type="radio" class="form-check-input" name="paymentMethod" value="cash" checked>
+                                            Cash on Delivery
+                                        </label>
+                                    </div>
+                                    <div class="col-md-3 mb-2">
+                                        <label class="form-check-label">
+                                            <input type="radio" class="form-check-input" name="paymentMethod" value="card">
+                                            Credit/Debit Card
+                                        </label>
+                                    </div>
+                                    <div class="col-md-3 mb-2">
+                                        <label class="form-check-label">
+                                            <input type="radio" class="form-check-input" name="paymentMethod" value="upi">
+                                            UPI
+                                        </label>
+                                    </div>
+                                    <div class="col-md-3 mb-2">
+                                        <label class="form-check-label">
+                                            <input type="radio" class="form-check-input" name="paymentMethod" value="netbanking">
+                                            Net Banking
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="col-lg-4">
+                    <div class="invoice-section">
+                        <h4>Order Invoice</h4>
+                        <div id="invoiceDetails"></div>
+                        <button class="btn btn-success w-100 mt-3" onclick="placeOrder()">Place Order</button>
+                        <button class="btn btn-outline-secondary w-100 mt-2" onclick="showSection('cart')">Back to Cart</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Order History Section -->
+        <section id="ordersSection" style="display: none;">
+            <h2>Order History</h2>
+            <div id="ordersList">
+                <!-- Orders will be displayed here -->
+            </div>
+        </section>
+
+        <!-- Admin Panel -->
+        <section id="adminSection" style="display: none;">
+            <div class="admin-panel">
+                <h2><i class="bi bi-shield-check"></i> Admin Dashboard</h2>
+                <p>Manage products, categories, and view sales reports</p>
+            </div>
+
+            <!-- Admin Stats -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="stats-card">
+                        <h3 id="totalProducts">0</h3>
+                        <p>Total Products</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stats-card">
+                        <h3 id="totalOrders">0</h3>
+                        <p>Total Orders</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stats-card">
+                        <h3 id="totalRevenue">₹0</h3>
+                        <p>Total Revenue</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stats-card">
+                        <h3 id="totalUsers">0</h3>
+                        <p>Total Users</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Admin Actions -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <button class="btn btn-primary me-2" onclick="showAddProductModal()">Add Product</button>
+                    <button class="btn btn-info me-2" onclick="showSalesReport()">Sales Report</button>
+                    <button class="btn btn-success" onclick="exportData()">Export Data</button>
+                </div>
+            </div>
+
+            <!-- Products Management Table -->
+            <div class="card">
+                <div class="card-header">
+                    <h5>Manage Products</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Name</th>
+                                    <th>Category</th>
+                                    <th>Price</th>
+                                    <th>Stock</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminProductsTable">
+                                <!-- Admin products table content -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Add Product Modal -->
+    <div class="modal fade" id="addProductModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add New Product</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addProductForm">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Product Name</label>
+                                <input type="text" class="form-control" id="productName" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Category</label>
+                                <select class="form-control" id="productCategory" required>
+                                    <option value="">Select Category</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Price (₹)</label>
+                                <input type="number" class="form-control" id="productPrice" min="0" step="0.01" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Stock Quantity</label>
+                                <input type="number" class="form-control" id="productQuantity" min="0" required>
+                            </div>
+                            <div class="col-12 mb-3">
+                                <label class="form-label">Description</label>
+                                <textarea class="form-control" id="productDescription" rows="3" required></textarea>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Add Product</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Product Modal -->
+    <div class="modal fade" id="editProductModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Product</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editProductForm">
+                        <input type="hidden" id="editProductId">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Product Name</label>
+                                <input type="text" class="form-control" id="editProductName" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Category</label>
+                                <select class="form-control" id="editProductCategory" required>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Price (₹)</label>
+                                <input type="number" class="form-control" id="editProductPrice" min="0" step="0.01" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Stock Quantity</label>
+                                <input type="number" class="form-control" id="editProductQuantity" min="0" required>
+                            </div>
+                            <div class="col-12 mb-3">
+                                <label class="form-label">Description</label>
+                                <textarea class="form-control" id="editProductDescription" rows="3" required></textarea>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Update Product</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sales Report Modal -->
+    <div class="modal fade" id="salesReportModal" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Sales Report</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="salesReportContent">
+                        <!-- Sales report content -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Global Application State
+        let currentUser = null;
+        let products = [];
+        let categories = [];
+        let users = [];
+        let cart = [];
+        let orders = [];
+        let appliedPromoCode = null;
+        let filteredProducts = [];
+
+        // Initialize sample data
+        function initializeData() {
+            // Sample Categories
+            categories = [
+                { id: 1, name: "Electronics", description: "Electronic gadgets and devices" },
+                { id: 2, name: "Clothing", description: "Fashion and apparel" },
+                { id: 3, name: "Groceries", description: "Food and daily essentials" },
+                { id: 4, name: "Books", description: "Books and educational materials" },
+                { id: 5, name: "Sports", description: "Sports equipment and accessories" }
+            ];
+
+            // Sample Products
+            products = [
+                { id: 1, name: "Smartphone", price: 25000, quantity: 50, category: "Electronics", description: "Latest Android smartphone with 128GB storage" },
+                { id: 2, name: "Laptop", price: 45000, quantity: 25, category: "Electronics", description: "14-inch laptop with Intel i5 processor" },
+                { id: 3, name: "Cotton T-Shirt", price: 499, quantity: 100, category: "Clothing", description: "Comfortable cotton t-shirt in multiple colors" },
+                { id: 4, name: "Jeans", price: 1299, quantity: 75, category: "Clothing", description: "Premium denim jeans with perfect fit" },
+                { id: 5, name: "Basmati Rice", price: 180, quantity: 200, category: "Groceries", description: "Premium quality basmati rice - 1kg pack" },
+                { id: 6, name: "Cooking Oil", price: 320, quantity: 150, category: "Groceries", description: "Refined sunflower oil - 1 liter" },
+                { id: 7, name: "Fiction Novel", price: 299, quantity: 60, category: "Books", description: "Bestselling fiction novel" },
+                { id: 8, name: "Technical Book", price: 899, quantity: 30, category: "Books", description: "Programming and software development guide" },
+                { id: 9, name: "Football", price: 799, quantity: 40, category: "Sports", description: "Professional quality football" },
+                { id: 10, name: "Cricket Bat", price: 2500, quantity: 20, category: "Sports", description: "Wooden cricket bat for professionals" }
+            ];
+
+            // Sample Users
+            users = [
+                { id: 1, username: "admin", email: "admin@example.com", password: "admin123", role: "admin" },
+                { id: 2, username: "user", email: "user@example.com", password: "user123", role: "user" }
+            ];
+
+            filteredProducts = [...products];
+        }
+
+        // Authentication Functions
+        function login(username, password) {
+            const user = users.find(u => u.username === username && u.password === password);
+            if (user) {
+                currentUser = user;
+                updateUIForLoggedInUser();
+                showNotification('Login successful!', 'success');
+                showSection('products');
+                return true;
+            }
+            showNotification('Invalid credentials!', 'error');
+            return false;
+        }
+
+        function register(username, email, password) {
+            if (users.find(u => u.username === username || u.email === email)) {
+                showNotification('Username or email already exists!', 'error');
+                return false;
+            }
+            
+            const newUser = {
+                id: Date.now(),
+                username,
+                email,
+                password,
+                role: 'user'
+            };
+            users.push(newUser);
+            showNotification('Registration successful! Please login.', 'success');
+            showSection('login');
+            return true;
+        }
+
+        function logout() {
+            currentUser = null;
+            cart = [];
+            appliedPromoCode = null;
+            updateUIForLoggedOutUser();
+            showNotification('Logged out successfully!', 'success');
+            showSection('welcome');
+        }
+
+        function updateUIForLoggedInUser() {
+            document.getElementById('loginNav').style.display = 'none';
+            document.getElementById('userNav').style.display = 'block';
+            document.getElementById('currentUser').textContent = currentUser.username;
+            document.getElementById('orderHistoryNav').style.display = 'block';
+            
+            if (currentUser.role === 'admin') {
+                document.getElementById('adminNav').style.display = 'block';
+            }
+            
+            updateCartDisplay();
+        }
+
+        function updateUIForLoggedOutUser() {
+            document.getElementById('loginNav').style.display = 'block';
+            document.getElementById('userNav').style.display = 'none';
+            document.getElementById('orderHistoryNav').style.display = 'none';
+            document.getElementById('adminNav').style.display = 'none';
+            updateCartDisplay();
+        }
+
+        // Product Functions
+        function addProduct(name, category, price, quantity, description) {
+            const newProduct = {
+                id: Date.now(),
+                name,
+                category,
+                price: parseFloat(price),
+                quantity: parseInt(quantity),
+                description
+            };
+            products.push(newProduct);
+            filteredProducts = [...products];
+            renderProducts();
+            renderAdminProducts();
+            showNotification('Product added successfully!', 'success');
+        }
+
+        function updateProduct(id, name, category, price, quantity, description) {
+            const productIndex = products.findIndex(p => p.id === parseInt(id));
+            if (productIndex !== -1) {
+                products[productIndex] = {
+                    ...products[productIndex],
+                    name,
+                    category,
+                    price: parseFloat(price),
+                    quantity: parseInt(quantity),
+                    description
+                };
+                filteredProducts = [...products];
+                renderProducts();
+                renderAdminProducts();
+                showNotification('Product updated successfully!', 'success');
+            }
+        }
+
+        function deleteProduct(id) {
+            if (confirm('Are you sure you want to delete this product?')) {
+                products = products.filter(p => p.id !== parseInt(id));
+                filteredProducts = [...products];
+                renderProducts();
+                renderAdminProducts();
+                showNotification('Product deleted successfully!', 'success');
+            }
+        }
+
+        // Cart Functions
+        function addToCart(productId, quantity = 1) {
+            if (!currentUser) {
+                showNotification('Please login to add items to cart!', 'error');
+                showSection('login');
+                return;
+            }
+
+            const product = products.find(p => p.id === productId);
+            if (!product) {
+                showNotification('Product not found!', 'error');
+                return;
+            }
+
+            if (product.quantity < quantity) {
+                showNotification('Not enough stock available!', 'error');
+                return;
+            }
+
+            const existingItem = cart.find(item => item.productId === productId);
+            if (existingItem) {
+                if (existingItem.quantity + quantity > product.quantity) {
+                    showNotification('Cannot add more than available stock!', 'error');
+                    return;
+                }
+                existingItem.quantity += quantity;
+            } else {
+                cart.push({ productId, quantity, addedAt: new Date() });
+            }
+
+            updateCartDisplay();
+            showNotification('Product added to cart!', 'success');
+        }
+
+        function removeFromCart(productId) {
+            cart = cart.filter(item => item.productId !== productId);
+            updateCartDisplay();
+            renderCart();
+            showNotification('Item removed from cart!', 'success');
+        }
+
+        function updateCartQuantity(productId, quantity) {
+            const product = products.find(p => p.id === productId);
+            if (quantity > product.quantity) {
+                showNotification('Not enough stock available!', 'error');
+                return;
+            }
+
+            const item = cart.find(item => item.productId === productId);
+            if (item) {
+                item.quantity = quantity;
+                updateCartDisplay();
+                renderCart();
+            }
+        }
+
+        function calculateCartTotals() {
+            let subtotal = 0;
+            let discount = 0;
+            let bulkDiscount = 0;
+            
+            cart.forEach(item => {
+                const product = products.find(p => p.id === item.productId);
+                if (product) {
+                    const itemTotal = product.price * item.quantity;
+                    subtotal += itemTotal;
+                    
+                    // Bulk discount: 10% off when buying 3+ identical items
+                    if (item.quantity >= 3) {
+                        bulkDiscount += itemTotal * 0.1;
+                    }
+                }
+            });
+            
+            // Tier discounts
+            if (subtotal >= 2000) {
+                discount = Math.max(discount, subtotal * 0.1); // 10% off
+            } else if (subtotal >= 1000) {
+                discount = Math.max(discount, subtotal * 0.05); // 5% off
+            }
+            
+            // Add bulk discount
+            discount += bulkDiscount;
+            
+            // Promo code discount
+            if (appliedPromoCode) {
+                const promoDiscount = subtotal * (appliedPromoCode.discount / 100);
+                discount += promoDiscount;
+            }
+            
+            const discountedAmount = subtotal - discount;
+            const tax = discountedAmount * 0.18; // 18% GST
+            const total = discountedAmount + tax;
+            
+            return { subtotal, discount, tax, total };
+        }
+
+        function applyPromoCode() {
+            const promoCodeInput = document.getElementById('promoCode').value.trim().toUpperCase();
+            const promoCodes = {
+                'SAVE10': { discount: 10, description: '10% discount on all items' },
+                'OFFER20': { discount: 20, description: '20% discount on orders above ₹1500' },
+                'WELCOME5': { discount: 5, description: '5% welcome discount for new users' }
+            };
+            
+            if (promoCodes[promoCodeInput]) {
+                if (promoCodeInput === 'OFFER20') {
+                    const { subtotal } = calculateCartTotals();
+                    if (subtotal < 1500) {
+                        showNotification('This promo code requires minimum order of ₹1500!', 'error');
+                        return;
+                    }
+                }
+                
+                appliedPromoCode = promoCodes[promoCodeInput];
+                updateCartDisplay();
+                renderCart();
+                showNotification(`Promo code applied: ${appliedPromoCode.description}`, 'success');
+                document.getElementById('promoCode').value = '';
+            } else {
+                showNotification('Invalid promo code!', 'error');
+            }
+        }
+
+        function updateCartDisplay() {
+            const cartCounter = document.getElementById('cartCounter');
+            const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+            cartCounter.textContent = totalItems;
+            cartCounter.style.display = totalItems > 0 ? 'inline' : 'none';
+        }
+
+        // Checkout and Orders
+        function proceedToCheckout() {
+            if (!currentUser) {
+                showNotification('Please login to checkout!', 'error');
+                showSection('login');
+                return;
+            }
+            
+            if (cart.length === 0) {
+                showNotification('Your cart is empty!', 'error');
+                return;
+            }
+            
+            showSection('checkout');
+            renderInvoicePreview();
+        }
+
+        function placeOrder() {
+            const form = document.getElementById('checkoutForm');
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+            
+            const { subtotal, discount, tax, total } = calculateCartTotals();
+            const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked').value;
+            
+            const order = {
+                id: Date.now(),
+                userId: currentUser.id,
+                items: [...cart],
+                subtotal,
+                discount,
+                tax,
+                total,
+                promoCode: appliedPromoCode?.code || null,
+                paymentMethod,
+                billingInfo: {
+                    name: document.getElementById('billingName').value,
+                    phone: document.getElementById('billingPhone').value,
+                    address: document.getElementById('billingAddress').value,
+                    city: document.getElementById('billingCity').value,
+                    postal: document.getElementById('billingPostal').value
+                },
+                orderDate: new Date(),
+                status: 'confirmed'
+            };
+            
+            orders.push(order);
+            
+            // Update product quantities
+            cart.forEach(item => {
+                const product = products.find(p => p.id === item.productId);
+                if (product) {
+                    product.quantity -= item.quantity;
+                }
+            });
+            
+            // Clear cart
+            cart = [];
+            appliedPromoCode = null;
+            
+            updateCartDisplay();
+            showOrderConfirmation(order);
+        }
+
+        function showOrderConfirmation(order) {
+            const confirmationHTML = `
+                <div class="alert alert-success text-center">
+                    <h3><i class="bi bi-check-circle-fill"></i> Order Placed Successfully!</h3>
+                    <p>Order ID: <strong>#${order.id}</strong></p>
+                    <p>Total Amount: <strong>₹${order.total.toFixed(2)}</strong></p>
+                    <p>Payment Method: <strong>${order.paymentMethod.toUpperCase()}</strong></p>
+                    <hr>
+                    <button class="btn btn-primary" onclick="showSection('orders')">View Order History</button>
+                    <button class="btn btn-outline-primary" onclick="showSection('products')">Continue Shopping</button>
+                </div>
+            `;
+            
+            document.querySelector('#checkoutSection').innerHTML = confirmationHTML;
+            showNotification('Order placed successfully!', 'success');
+        }
+
+        // Utility Functions
+        function showSection(sectionName) {
+            const sections = ['welcomeSection', 'loginSection', 'registerSection', 'productsSection', 'cartSection', 'checkoutSection', 'ordersSection', 'adminSection'];
+            
+            sections.forEach(section => {
+                document.getElementById(section).style.display = 'none';
+            });
+            
+            document.getElementById(sectionName + 'Section').style.display = 'block';
+            
+            // Load section-specific content
+            switch(sectionName) {
+                case 'products':
+                    renderProducts();
+                    renderCategoryFilters();
+                    break;
+                case 'cart':
+                    renderCart();
+                    break;
+                case 'orders':
+                    renderOrders();
+                    break;
+                case 'admin':
+                    if (currentUser?.role === 'admin') {
+                        renderAdminDashboard();
+                    } else {
+                        showNotification('Access denied. Admin rights required.', 'error');
+                        showSection('products');
+                    }
+                    break;
+            }
+        }
+
+        function showNotification(message, type = 'info') {
+            const alertClass = {
+                'success': 'alert-success',
+                'error': 'alert-danger',
+                'warning': 'alert-warning',
+                'info': 'alert-info'
+            }[type] || 'alert-info';
+            
+            const notification = document.createElement('div');
+            notification.className = `alert ${alertClass} alert-dismissible fade show position-fixed`;
+            notification.style.top = '80px';
+            notification.style.right = '20px';
+            notification.style.zIndex = '9999';
+            notification.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, 5000);
+        }
+
+        function getProductIcon(category) {
+            const icons = {
+                'Electronics': 'bi-phone',
+                'Clothing': 'bi-bag',
+                'Groceries': 'bi-basket',
+                'Books': 'bi-book',
+                'Sports': 'bi-trophy'
+            };
+            return icons[category] || 'bi-box';
+        }
+
+        // Rendering Functions
+        function renderProducts() {
+            const grid = document.getElementById('productsGrid');
+            
+            if (filteredProducts.length === 0) {
+                grid.innerHTML = '<div class="col-12 text-center"><h4>No products found</h4></div>';
+                return;
+            }
+            
+            grid.innerHTML = filteredProducts.map(product => {
+                const isOutOfStock = product.quantity === 0;
+                const icon = getProductIcon(product.category);
+                
+                return `
+                    <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+                        <div class="card product-card h-100 ${isOutOfStock ? 'out-of-stock' : ''}">
+                            <div class="product-image">
+                                <i class="bi ${icon}"></i>
+                            </div>
+                            <div class="card-body d-flex flex-column">
+                                <h6 class="card-title">${product.name}</h6>
+                                <p class="card-text text-muted small">${product.description}</p>
+                                <p class="text-muted mb-1">Category: ${product.category}</p>
+                                <div class="mt-auto">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <span class="price-text">₹${product.price.toLocaleString()}</span>
+                                        <small class="text-muted">Stock: ${product.quantity}</small>
+                                    </div>
+                                    ${!isOutOfStock ? `
+                                        <button class="btn btn-primary btn-sm w-100" onclick="addToCart(${product.id})">
+                                            <i class="bi bi-cart-plus"></i> Add to Cart
+                                        </button>
+                                    ` : ''}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderCategoryFilters() {
+            const filtersContainer = document.getElementById('categoryFilters');
+            const uniqueCategories = [...new Set(products.map(p => p.category))];
+            
+            filtersContainer.innerHTML = `
+                <button class="btn btn-outline-primary category-filter active" data-category="">All</button>
+                ${uniqueCategories.map(category => 
+                    `<button class="btn btn-outline-primary category-filter" data-category="${category}">${category}</button>`
+                ).join('')}
+            `;
+            
+            // Add event listeners
+            filtersContainer.querySelectorAll('.category-filter').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.category-filter').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    applyFilters();
+                });
+            });
+        }
+
+        function renderCart() {
+            const cartItemsContainer = document.getElementById('cartItems');
+            
+            if (cart.length === 0) {
+                cartItemsContainer.innerHTML = `
+                    <div class="text-center py-5">
+                        <i class="bi bi-cart-x" style="font-size: 4rem; color: #ccc;"></i>
+                        <h4 class="mt-3">Your cart is empty</h4>
+                        <button class="btn btn-primary" onclick="showSection('products')">Start Shopping</button>
+                    </div>
+                `;
+                document.getElementById('checkoutBtn').disabled = true;
+                return;
+            }
+            
+            document.getElementById('checkoutBtn').disabled = false;
+            
+            cartItemsContainer.innerHTML = cart.map(item => {
+                const product = products.find(p => p.id === item.productId);
+                if (!product) return '';
+                
+                const itemTotal = product.price * item.quantity;
+                const icon = getProductIcon(product.category);
+                
+                return `
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <div class="row align-items-center">
+                                <div class="col-md-2 text-center">
+                                    <i class="bi ${icon}" style="font-size: 2rem; color: var(--color-primary);"></i>
+                                </div>
+                                <div class="col-md-4">
+                                    <h6 class="mb-1">${product.name}</h6>
+                                    <small class="text-muted">${product.category}</small>
+                                    <br>
+                                    <span class="price-text">₹${product.price.toLocaleString()}</span>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="quantity-controls">
+                                        <button class="quantity-btn" onclick="updateCartQuantity(${product.id}, ${item.quantity - 1})" ${item.quantity <= 1 ? 'disabled' : ''}>
+                                            <i class="bi bi-dash"></i>
+                                        </button>
+                                        <span class="mx-2">${item.quantity}</span>
+                                        <button class="quantity-btn" onclick="updateCartQuantity(${product.id}, ${item.quantity + 1})" ${item.quantity >= product.quantity ? 'disabled' : ''}>
+                                            <i class="bi bi-plus"></i>
+                                        </button>
+                                    </div>
+                                    <small class="text-muted d-block mt-1">Available: ${product.quantity}</small>
+                                    ${item.quantity >= 3 ? '<small class="text-success">Bulk discount applied!</small>' : ''}
+                                </div>
+                                <div class="col-md-2 text-end">
+                                    <div class="fw-bold">₹${itemTotal.toLocaleString()}</div>
+                                </div>
+                                <div class="col-md-1 text-end">
+                                    <button class="btn btn-outline-danger btn-sm" onclick="removeFromCart(${product.id})">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            updateCartSummary();
+        }
+
+        function updateCartSummary() {
+            const { subtotal, discount, tax, total } = calculateCartTotals();
+            
+            document.getElementById('cartSubtotal').textContent = `₹${subtotal.toFixed(2)}`;
+            document.getElementById('cartDiscount').textContent = `-₹${discount.toFixed(2)}`;
+            document.getElementById('cartTax').textContent = `₹${tax.toFixed(2)}`;
+            document.getElementById('cartTotal').textContent = `₹${total.toFixed(2)}`;
+            
+            const discountRow = document.getElementById('discountRow');
+            if (discount > 0) {
+                discountRow.style.display = 'flex';
+            } else {
+                discountRow.style.display = 'none';
+            }
+        }
+
+        function renderInvoicePreview() {
+            const { subtotal, discount, tax, total } = calculateCartTotals();
+            const invoiceDetails = document.getElementById('invoiceDetails');
+            
+            invoiceDetails.innerHTML = `
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <h5>Order Summary</h5>
+                        <hr>
+                    </div>
+                </div>
+                
+                ${cart.map(item => {
+                    const product = products.find(p => p.id === item.productId);
+                    return `
+                        <div class="d-flex justify-content-between mb-1">
+                            <span>${product.name} × ${item.quantity}</span>
+                            <span>₹${(product.price * item.quantity).toFixed(2)}</span>
+                        </div>
+                    `;
+                }).join('')}
+                
+                <hr>
+                <div class="d-flex justify-content-between">
+                    <span>Subtotal:</span>
+                    <span>₹${subtotal.toFixed(2)}</span>
+                </div>
+                ${discount > 0 ? `
+                    <div class="d-flex justify-content-between text-success">
+                        <span>Discount:</span>
+                        <span>-₹${discount.toFixed(2)}</span>
+                    </div>
+                ` : ''}
+                ${appliedPromoCode ? `
+                    <div class="d-flex justify-content-between text-success">
+                        <span>Promo (${appliedPromoCode.code}):</span>
+                        <span>Applied</span>
+                    </div>
+                ` : ''}
+                <div class="d-flex justify-content-between">
+                    <span>Tax (18% GST):</span>
+                    <span>₹${tax.toFixed(2)}</span>
+                </div>
+                <hr>
+                <div class="d-flex justify-content-between fw-bold fs-5">
+                    <span>Total:</span>
+                    <span>₹${total.toFixed(2)}</span>
+                </div>
+            `;
+        }
+
+        function renderOrders() {
+            const ordersList = document.getElementById('ordersList');
+            const userOrders = orders.filter(order => order.userId === currentUser.id);
+            
+            if (userOrders.length === 0) {
+                ordersList.innerHTML = `
+                    <div class="text-center py-5">
+                        <i class="bi bi-bag-x" style="font-size: 4rem; color: #ccc;"></i>
+                        <h4 class="mt-3">No orders found</h4>
+                        <button class="btn btn-primary" onclick="showSection('products')">Start Shopping</button>
+                    </div>
+                `;
+                return;
+            }
+            
+            ordersList.innerHTML = userOrders.map(order => `
+                <div class="card mb-3">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0">Order #${order.id}</h6>
+                        <span class="badge bg-success">${order.status}</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>Order Date:</strong> ${new Date(order.orderDate).toLocaleString()}</p>
+                                <p><strong>Payment Method:</strong> ${order.paymentMethod.toUpperCase()}</p>
+                                <p><strong>Items:</strong></p>
+                                <ul>
+                                    ${order.items.map(item => {
+                                        const product = products.find(p => p.id === item.productId);
+                                        return `<li>${product?.name} × ${item.quantity}</li>`;
+                                    }).join('')}
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="text-end">
+                                    <p><strong>Subtotal:</strong> ₹${order.subtotal.toFixed(2)}</p>
+                                    ${order.discount > 0 ? `<p class="text-success"><strong>Discount:</strong> -₹${order.discount.toFixed(2)}</p>` : ''}
+                                    <p><strong>Tax:</strong> ₹${order.tax.toFixed(2)}</p>
+                                    <h5><strong>Total: ₹${order.total.toFixed(2)}</strong></h5>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderAdminDashboard() {
+            // Update stats
+            document.getElementById('totalProducts').textContent = products.length;
+            document.getElementById('totalOrders').textContent = orders.length;
+            document.getElementById('totalRevenue').textContent = `₹${orders.reduce((sum, order) => sum + order.total, 0).toFixed(2)}`;
+            document.getElementById('totalUsers').textContent = users.filter(u => u.role === 'user').length;
+            
+            renderAdminProducts();
+        }
+
+        function renderAdminProducts() {
+            const tbody = document.getElementById('adminProductsTable');
+            
+            tbody.innerHTML = products.map(product => `
+                <tr>
+                    <td>${product.id}</td>
+                    <td>${product.name}</td>
+                    <td>${product.category}</td>
+                    <td>₹${product.price.toLocaleString()}</td>
+                    <td>${product.quantity}</td>
+                    <td>
+                        <span class="badge ${product.quantity > 0 ? 'bg-success' : 'bg-danger'}">
+                            ${product.quantity > 0 ? 'In Stock' : 'Out of Stock'}
+                        </span>
+                    </td>
+                    <td>
+                        <button class="btn btn-sm btn-primary" onclick="editProduct(${product.id})">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteProduct(${product.id})">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // Filter Functions
+        function applyFilters() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const selectedCategory = document.querySelector('.category-filter.active').dataset.category;
+            const priceRange = document.getElementById('priceFilter').value;
+            
+            filteredProducts = products.filter(product => {
+                // Search filter
+                const matchesSearch = product.name.toLowerCase().includes(searchTerm) || 
+                                    product.description.toLowerCase().includes(searchTerm);
+                
+                // Category filter
+                const matchesCategory = !selectedCategory || product.category === selectedCategory;
+                
+                // Price filter
+                let matchesPrice = true;
+                if (priceRange) {
+                    if (priceRange === '0-500') {
+                        matchesPrice = product.price <= 500;
+                    } else if (priceRange === '500-1000') {
+                        matchesPrice = product.price > 500 && product.price <= 1000;
+                    } else if (priceRange === '1000-2000') {
+                        matchesPrice = product.price > 1000 && product.price <= 2000;
+                    } else if (priceRange === '2000-5000') {
+                        matchesPrice = product.price > 2000 && product.price <= 5000;
+                    } else if (priceRange === '5000+') {
+                        matchesPrice = product.price > 5000;
+                    }
+                }
+                
+                return matchesSearch && matchesCategory && matchesPrice;
+            });
+            
+            renderProducts();
+        }
+
+        // Admin Functions
+        function showAddProductModal() {
+            // Populate category dropdown
+            const categorySelect = document.getElementById('productCategory');
+            categorySelect.innerHTML = '<option value="">Select Category</option>' + 
+                categories.map(cat => `<option value="${cat.name}">${cat.name}</option>`).join('');
+            
+            const modal = new bootstrap.Modal(document.getElementById('addProductModal'));
+            modal.show();
+        }
+
+        function editProduct(productId) {
+            const product = products.find(p => p.id === productId);
+            if (!product) return;
+            
+            // Populate form
+            document.getElementById('editProductId').value = product.id;
+            document.getElementById('editProductName').value = product.name;
+            document.getElementById('editProductPrice').value = product.price;
+            document.getElementById('editProductQuantity').value = product.quantity;
+            document.getElementById('editProductDescription').value = product.description;
+            
+            // Populate category dropdown
+            const categorySelect = document.getElementById('editProductCategory');
+            categorySelect.innerHTML = categories.map(cat => 
+                `<option value="${cat.name}" ${cat.name === product.category ? 'selected' : ''}>${cat.name}</option>`
+            ).join('');
+            
+            const modal = new bootstrap.Modal(document.getElementById('editProductModal'));
+            modal.show();
+        }
+
+        function showSalesReport() {
+            const reportContent = document.getElementById('salesReportContent');
+            
+            const totalRevenue = orders.reduce((sum, order) => sum + order.total, 0);
+            const totalDiscount = orders.reduce((sum, order) => sum + order.discount, 0);
+            const totalTax = orders.reduce((sum, order) => sum + order.tax, 0);
+            
+            // Category wise sales
+            const categoryStats = {};
+            orders.forEach(order => {
+                order.items.forEach(item => {
+                    const product = products.find(p => p.id === item.productId);
+                    if (product) {
+                        if (!categoryStats[product.category]) {
+                            categoryStats[product.category] = { count: 0, revenue: 0 };
+                        }
+                        categoryStats[product.category].count += item.quantity;
+                        categoryStats[product.category].revenue += product.price * item.quantity;
+                    }
+                });
+            });
+            
+            reportContent.innerHTML = `
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <div class="stats-card">
+                            <h4>₹${totalRevenue.toFixed(2)}</h4>
+                            <p>Total Revenue</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stats-card">
+                            <h4>₹${totalDiscount.toFixed(2)}</h4>
+                            <p>Total Discounts</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stats-card">
+                            <h4>₹${totalTax.toFixed(2)}</h4>
+                            <p>Total Tax Collected</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stats-card">
+                            <h4>${orders.length}</h4>
+                            <p>Total Orders</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <h5>Category-wise Sales</h5>
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Category</th>
+                                <th>Items Sold</th>
+                                <th>Revenue</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${Object.entries(categoryStats).map(([category, stats]) => `
+                                <tr>
+                                    <td>${category}</td>
+                                    <td>${stats.count}</td>
+                                    <td>₹${stats.revenue.toFixed(2)}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            
+            const modal = new bootstrap.Modal(document.getElementById('salesReportModal'));
+            modal.show();
+        }
+
+        function exportData() {
+            const data = {
+                products,
+                categories,
+                orders,
+                users: users.map(u => ({ ...u, password: '***' })) // Hide passwords
+            };
+            
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `shopease-data-${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            showNotification('Data exported successfully!', 'success');
+        }
+
+        // Event Listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeData();
+            
+            // Login form
+            document.getElementById('loginForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const username = document.getElementById('loginUsername').value;
+                const password = document.getElementById('loginPassword').value;
+                login(username, password);
+            });
+            
+            // Register form
+            document.getElementById('registerForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const username = document.getElementById('registerUsername').value;
+                const email = document.getElementById('registerEmail').value;
+                const password = document.getElementById('registerPassword').value;
+                register(username, email, password);
+            });
+            
+            // Add product form
+            document.getElementById('addProductForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const name = document.getElementById('productName').value;
+                const category = document.getElementById('productCategory').value;
+                const price = document.getElementById('productPrice').value;
+                const quantity = document.getElementById('productQuantity').value;
+                const description = document.getElementById('productDescription').value;
+                
+                addProduct(name, category, price, quantity, description);
+                
+                const modal = bootstrap.Modal.getInstance(document.getElementById('addProductModal'));
+                modal.hide();
+                
+                e.target.reset();
+            });
+            
+            // Edit product form
+            document.getElementById('editProductForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const id = document.getElementById('editProductId').value;
+                const name = document.getElementById('editProductName').value;
+                const category = document.getElementById('editProductCategory').value;
+                const price = document.getElementById('editProductPrice').value;
+                const quantity = document.getElementById('editProductQuantity').value;
+                const description = document.getElementById('editProductDescription').value;
+                
+                updateProduct(id, name, category, price, quantity, description);
+                
+                const modal = bootstrap.Modal.getInstance(document.getElementById('editProductModal'));
+                modal.hide();
+            });
+            
+            // Search input
+            document.getElementById('searchInput').addEventListener('input', function() {
+                clearTimeout(this.searchTimeout);
+                this.searchTimeout = setTimeout(() => {
+                    applyFilters();
+                }, 300);
+            });
+            
+            // Price filter
+            document.getElementById('priceFilter').addEventListener('change', applyFilters);
+        });
+    </script>
+</body>
+</html>
